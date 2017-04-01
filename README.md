@@ -12,7 +12,7 @@ You can probably open the PS files in a document viewer like `evince` or
 running `make`.
 
 Converting to PDF is done by `ps2pdf` which is part of [ghostscript][2].
-Postscript can be installed by running `sudo apt-get install ghostscrip` on
+Ghostscript can be installed by running `sudo apt-get install ghostscript` on
 most Debian based distributions.
 
 Please let me know if you like it, have printed it or something else ;-).
