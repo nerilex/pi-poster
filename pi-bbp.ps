@@ -1,0 +1,238 @@
+%!PS PostScript document
+%%DocumentMedia: a4 595 842 0 () ()
+%%Orientation: Portrait
+
+% author:  bg nerilex
+% email:   bg@nerilex.org
+% date:    2017-09-17
+% license: GPLv3 
+
+%    Copyright (C) 2008 - 2017 bg nerilex
+%
+%    This program is free software: you can redistribute it and/or modify
+%    it under the terms of the GNU General Public License as published by
+%    the Free Software Foundation, either version 3 of the License, or
+%    (at your option) any later version.
+%
+%    This program is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%    GNU General Public License for more details.
+%
+%    You should have received a copy of the GNU General Public License
+%    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%
+% pi = 4*S(1) - 2*S(4) - S(5) - S(6)
+%
+% S(j) = sum{k = 0 to infinite}{ (1 / 16**k) * (1 / (8*k + j)) }
+
+
+/bits_per_int
+1 1 
+{
+  dup 0 le { pop exit } if
+  exch 1 add
+  exch 1 bitshift
+} loop def
+
+(useable bits in an integer: ) print
+bits_per_int 20 string cvs print
+(\n) print
+
+/bits_per_digit 4 def
+
+/digits_per_int bits_per_int bits_per_digit idiv def
+
+
+/M 1 bits_per_int bits_per_digit 2 mul 1 add sub bitshift def
+
+% b e m -- ((b**e) mod m)
+/pow_mod {
+	3 1 roll % m b e 
+	1 % the accumulator
+	{
+		% m b e a
+		exch % m b a e
+		dup -1 bitshift exch % m b a e' e
+		1 and 1 eq
+		{
+			4 1 roll % e' m b a
+			1 index mul % e' m b a' 
+			2 index mod % e' m b a'
+		} {
+			4 1 roll % e' m b a
+		} ifelse
+		exch dup mul % e' m a' b' 
+		2 index mod  % e' m a' b'
+		exch % e' m b' a'
+		4 -1 roll  % m b' a' e'
+		dup 0 eq { exit } if
+		exch
+	} loop
+	% m b' a' e'
+	pop
+	3 -1 roll % b' a' m
+	mod 
+	exch pop
+} def
+
+
+/SHIFT bits_per_int bits_per_digit idiv 1 sub bits_per_digit mul def
+%/SHIFT 27 def
+% n j -- S_j(n)
+/Sx
+  {
+  	% n m(=j)
+  	0 % accu
+  	0 1 4 index { % n m accu 0 1 n % for (k in [0 .. n])
+  		% n m accu k
+  		3 index exch sub % n m accu (n - k)
+  		16 exch 3 index % n m accu 16 (n - k) m
+  		pow_mod SHIFT bitshift % n m accu X
+  		2 index idiv % n m accu (X / m)
+  		add % n m accu'
+  		exch 8 add exch % n m' accu'
+  	} for
+  	% n m' accu
+  	exch SHIFT 4 idiv 1 sub 8 mul add exch % n j (m' + 8 * SHIFT / 4) accu
+	3 -1 roll % m' accu n
+	1 exch % m' accu v n
+	dup 1 add exch % m' accu v (n + 1) n
+	SHIFT 4 idiv add % m' accu v (n + 1) (n + SHIFT / 4)
+  	exch -1 exch % m' accu v (n + SHIFT / 4) -1 (n + 1)
+  	{
+  		% m accu v k
+  		pop
+  		dup 3 index % m accu v v m
+  		idiv % m accu v X
+  		4 -1 roll % accu v' X m
+  		8 sub % accu v X m'
+  		4 1 roll % m' accu v X
+  		3 -1 roll % m' v X accu
+  		add exch % m' accu' v
+  		16 mul % m accu v'
+  	} for
+  	pop % m accu
+  	exch pop
+  	% accu
+  	1 SHIFT bitshift 1 sub and 
+  } def
+
+
+/S1x { 1 Sx } def
+/S4x { 4 Sx } def
+/S5x { 5 Sx } def
+/S6x { 6 Sx } def
+
+/xprint { dup 16 20 string cvrs print} def
+
+% n -- x % x is the n-th digit of pi
+/pi_hex_digit {
+	1 sub
+	dup dup dup % n n n n
+    S1x 4 mul   % n n n x1
+    exch        % n n x1 n
+	S4x 2 mul sub % n n x2
+	exch        % n x2 n
+	S5x sub     % n x3
+	exch        % x3 n
+	S6x sub     % x4
+	1 SHIFT bitshift 1 sub and
+	SHIFT 4 sub -1 mul bitshift
+} def
+
+0 1 1 index 30 add {
+	dup dup
+	pi_hex_digit 
+	xprint pop
+	0 eq { (.) print } if
+	dup 0 ne exch
+	10 mod 0 eq and { (\n  ) print } if
+} for
+
+
+/paper_autosize false def
+
+/inch {	72 mul } def
+/cm { inch 2.54 div } def
+/DIN_A_ratio  2 sqrt  def
+/DIN_A_0 [ 100 cm 100 cm mul DIN_A_ratio div sqrt dup DIN_A_ratio mul ] cvx def % A = 1 qm
+/DIN_A { % a -- x y 	a is the number of th DIN A, x and y are the corresponding sizes
+	dup 0 eq 
+		{ pop DIN_A_0 }
+		{ 1 sub DIN_A 2 div exch } ifelse
+} def
+
+
+/all_scale { 1 div } def
+
+/papersize [
+	paper_autosize
+	{
+		currentpagedevice
+		/PageSize get
+		aload pop
+	}
+	{
+		4 DIN_A 
+       		round exch round exch % dirty hack, might work
+	} ifelse
+] cvx def
+
+papersize
+= =
+
+/xdist 15 2 mul def
+/ydist 30 1 mul def
+/margin 40 def
+/Courier findfont
+25 scalefont
+setfont
+
+/ypos 200 def
+
+0 % index of first digit
+papersize exch pop margin sub ydist 2 mul sub 
+ydist -1 mul 
+papersize exch pop 2 div
+{
+	% idx ypos
+	margin xdist papersize pop margin sub {
+		% idx ypos xpos
+		1 index moveto % idx ypos
+		2 1 roll dup % ypos idx idx
+		pi_hex_digit 
+		16 5 string cvrs 
+		show
+		% ypos idx
+		1 add exch % idx' ypos
+	} for
+	pop
+} for
+
+/dbgP {
+	margin currentpoint exch pop ydist sub moveto
+	(Value of ) show
+	dup 20 string cvs show
+	(: ) show
+	mark exch cvx exec
+	counttomark
+	{
+	20 string cvs show
+	counttomark 0 ne { (, ) show } if
+	} repeat
+	pop
+} def
+
+
+20 string cvs (printed ) print print (digits\n) print
+
+/bits_per_int dbgP
+/SHIFT dbgP
+/papersize dbgP
+%20 string cvs (printed ) print print (digits) print
+
+showpage
+
+%prompt
