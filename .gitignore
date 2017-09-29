@@ -2,3 +2,5 @@
 *.pdf
 *.tar.xz
 no_git/
+!out/*.pdf
+!out/*.png

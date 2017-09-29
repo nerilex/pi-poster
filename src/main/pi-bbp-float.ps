@@ -89,43 +89,41 @@ bits_per_int 20 string cvs print
   		% n m accu k
   		3 index exch sub % n m accu (n - k)
   		16 exch 3 index % n m accu 16 (n - k) m
-  		pow_mod SHIFT bitshift % n m accu X
-  		2 index idiv % n m accu (X / m)
+  		pow_mod % n m accu X
+  		2 index div % n m accu (X / m)
+  		dup truncate sub % n m accu frac(X / m)
   		add % n m accu'
   		exch 8 add exch % n m' accu'
   	} for
   	% n m' accu
-  	exch SHIFT 4 idiv 1 sub 8 mul add exch % n j (m' + 8 * SHIFT / 4) accu
-	3 -1 roll % m' accu n
-	1 exch % m' accu v n
-	dup 1 add exch % m' accu v (n + 1) n
-	SHIFT 4 idiv add % m' accu v (n + 1) (n + SHIFT / 4)
-  	exch -1 exch % m' accu v (n + SHIFT / 4) -1 (n + 1)
-  	{
-  		% m accu v k
-  		pop
-  		dup 3 index % m accu v v m
-  		idiv % m accu v X
-  		4 -1 roll % accu v' X m
-  		8 sub % accu v X m'
-  		4 1 roll % m' accu v X
-  		3 -1 roll % m' v X accu
-  		add exch % m' accu' v
-  		16 mul % m accu v'
-  	} for
-  	pop % m accu
-  	exch pop
-  	% accu
-  	1 SHIFT bitshift 1 sub and 
+  	1 % n m' accu v
+	{
+		16 div % n m accu v'
+		dup 3 index % n m accu v' v' m
+		div % n m accu v' s
+		dup 0 eq { exit } if
+		3 -1 roll % n m v' s accu
+		add % n m v' accu'
+		3 -1 roll % n v' accu' m
+		8 add % n v' accu' m'
+		3 1 roll % n m' v' accu'
+		exch % n m' accu' m' 
+	} loop
+	% n m accu v' s
+	5 -2 roll % accu v' s n m
+	pop pop pop pop % accu
   } def
 
 
-/S1x { 1 Sx } def
-/S4x { 4 Sx } def
-/S5x { 5 Sx } def
-/S6x { 6 Sx } def
-
 /xprint { dup 16 20 string cvrs print} def
+/fprint { dup 20 string cvs print} def
+
+/DEBUG false def
+/S1x { 1 Sx DEBUG { (DBG: S1 = ) print fprint (\n) print } if } def
+/S4x { 4 Sx DEBUG { (DBG: S4 = ) print fprint (\n) print } if  } def
+/S5x { 5 Sx DEBUG { (DBG: S5 = ) print fprint (\n) print } if  } def
+/S6x { 6 Sx DEBUG { (DBG: S6 = ) print fprint (\n) print } if  } def
+
 
 % n -- x % x is the n-th digit of pi
 /pi_hex_digit {
@@ -138,20 +136,28 @@ bits_per_int 20 string cvs print
 	S5x sub     % n x3
 	exch        % x3 n
 	S6x sub     % x4
-	1 SHIFT bitshift 1 sub and
-	SHIFT 4 sub -1 mul bitshift
+  	dup truncate sub % frac(accu)
+	dup 0 lt { 1 add } if
+	16 mul 
+%	dup = 
+	cvi
+	16#0f and
+%	1 SHIFT bitshift 1 sub and
+%	SHIFT 4 sub -1 mul bitshift
 } def
 
-0 1 1 index 30 add {
+0 1 1 index 50 add {
 	dup dup
-	pi_hex_digit 
+	pi_hex_digit
 	xprint pop
 	0 eq { (.) print } if
 	dup 0 ne exch
 	10 mod 0 eq and { (\n  ) print } if
+	flush
 } for
 
-
+true
+{
 /paper_autosize false def
 
 /inch {	72 mul } def
@@ -176,7 +182,7 @@ bits_per_int 20 string cvs print
 	}
 	{
 		4 DIN_A 
-       		round exch round exch % dirty hack, might work
+		round exch round exch % dirty hack, might work
 	} ifelse
 ] cvx def
 
@@ -202,8 +208,8 @@ papersize exch pop 2 div
 		% idx ypos xpos
 		1 index moveto % idx ypos
 		2 1 roll dup % ypos idx idx
-		pi_hex_digit 
-		16 5 string cvrs 
+		pi_hex_digit
+		16 5 string cvrs
 		show
 		% ypos idx
 		1 add exch % idx' ypos
@@ -231,8 +237,16 @@ papersize exch pop 2 div
 /bits_per_int dbgP
 /SHIFT dbgP
 /papersize dbgP
+/product dbgP
+/version dbgP
+/revision dbgP
+/serialnumber dbgP
+/languagelevel dbgP
+/usertime dbgP
+/realtime dbgP
+
 %20 string cvs (printed ) print print (digits) print
 
 showpage
 
-%prompt
+} if

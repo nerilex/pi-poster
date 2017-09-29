@@ -24,8 +24,13 @@
 
 /starttime usertime def
 
+systemdict /runlibfile known not {
+	/runlibfile /run cvx def
+} if
+
+
 currentdict /pi_hex_digit known not {
-	(pi-bbp-int-core.inc.ps) run
+	(pi-bbp-int-core.inc.ps) runlibfile
 } if
 
 
@@ -86,15 +91,32 @@ currentdict /pi_hex_digit known not {
 papersize
 = =
 
+false {
+newpath
+papersize % x y
+4 div exch 4 div exch moveto
+papersize % x y
+4 div 3 mul exch 4 div exch lineto
+papersize % x y
+4 div 3 mul exch 4 div 3 mul exch lineto
+papersize % x y
+4 div exch 4 div 3 mul exch lineto
+closepath
+} if
 
-% x -- arcsin(x)
-/arcsin {
-	dup dup abs div exch % sgn(x) x
-	dup mul % sgn(x) x**2
-	dup 1 exch sub % sgn(x) x**2 (1 - x**2)
-	div sqrt 1 atan mul % arcsin(x)=(sgn(x) * arctan(sqrt(x**2 /  (1 - x**2))))
-} def
+true {
+newpath
+0 0 moveto
+papersize % x y
+pop 0 lineto
+papersize % x y
+lineto
+papersize % x y
+exch pop 0 exch lineto
+closepath
+} if
 
+systemdict /arccos known not {
 % x -- arcsin(x)
 /arccos {
 %	dup (arccos\() print 20 string cvs print (\) = ) print
@@ -107,13 +129,16 @@ papersize
 	1 atan 2 mul
 %	dup 20 string cvs print (\n) print
 } def
+} if
 
+systemdict /arcsin known not {
 /arcsin {
 	arccos
 	90 div
 	dup truncate sub
 	90 mul
 } def
+} if
 
 /to_rad_fact 2 3.1415926 mul 360 div def
 /to_deg_fact 1 to_rad_fact div def
@@ -140,23 +165,20 @@ papersize
 
 
 
-/xdist 15 1 mul def
-/ydist 30 1 mul def
 /margin 40 def
 /Courier findfont
 25 scalefont
 setfont
 
+/xdist (x) stringwidth pop def
+/ydist 30 1 mul def
 /yoff 50 def
 /ypos ydist 1 mul def
 
 
+
 /a 1.2 def
 % move  (0, 0) into the center of the page
-papersize 2 div exch 2 div exch translate
-
-0 ypos moveto
-
 /digit_idx 0 def
 /phi 0 def
 /ypos ydist 1 mul def
@@ -177,16 +199,32 @@ papersize 2 div exch 2 div exch translate
 limit =
 flush
 
+/visible {
+	currentpoint infill
+	currentpoint exch xdist add exch infill
+	or
+} def
+
+papersize 2 div exch 2 div exch translate
+
+0 ypos moveto
+
 
 0
 {
 	% c
 	dup 1 add exch
 	0 ypos moveto
-	pi_hex_digit
-	16 5 string cvrs % ypos' phi' idx' ("digit")
-	dup
-	show
+	visible
+	{
+		pi_hex_digit
+		16 5 string cvrs % ypos' phi' idx' ("digit")
+		dup
+		show
+	} {
+		pop
+		(x)
+	} ifelse
 	stringwidth % wx wy
 	pop
 %	(wy:) print = dup (wx:) print =
