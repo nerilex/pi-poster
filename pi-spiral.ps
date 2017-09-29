@@ -1,0 +1,216 @@
+%!PS PostScript document
+%%DocumentMedia: a4 595 842 0 () ()
+%%Orientation: Portrait
+
+% author:  bg nerilex
+% email:   bg@nerilex.org
+% date:    2017-09-17
+% license: GPLv3 
+
+%    Copyright (C) 2008 - 2017 bg nerilex
+%
+%    This program is free software: you can redistribute it and/or modify
+%    it under the terms of the GNU General Public License as published by
+%    the Free Software Foundation, either version 3 of the License, or
+%    (at your option) any later version.
+%
+%    This program is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%    GNU General Public License for more details.
+%
+%    You should have received a copy of the GNU General Public License
+%    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+/starttime usertime def
+
+currentdict /pi_hex_digit known not {
+	(pi-bbp-int-core.inc.ps) run
+} if
+
+
+/dbgP {
+	margin currentpoint exch pop ydist sub moveto
+	(Value of ) show
+	dup 20 string cvs show
+	(: ) show
+	mark exch cvx exec
+	counttomark
+	{
+	20 string cvs show
+	counttomark 0 ne { (, ) show } if
+	} repeat
+	pop
+} def
+
+
+
+0 1 1 index 30 add {
+	dup dup
+	pi_hex_digit 
+	xprint pop
+	0 eq { (.) print } if
+	dup 0 ne exch
+	10 mod 0 eq and { (\n  ) print } if
+} for
+
+
+/paper_autosize true def
+
+/inch {	72 mul } def
+/cm { inch 2.54 div } def
+/DIN_A_ratio  2 sqrt  def
+/DIN_A_0 [ 100 cm 100 cm mul DIN_A_ratio div sqrt dup DIN_A_ratio mul ] cvx def % A = 1 qm
+/DIN_A { % a -- x y 	a is the number of th DIN A, x and y are the corresponding sizes
+	dup 0 eq 
+		{ pop DIN_A_0 }
+		{ 1 sub DIN_A 2 div exch } ifelse
+} def
+
+
+/all_scale { 1 div } def
+
+/papersize [
+	paper_autosize
+	{
+		currentpagedevice
+		/PageSize get
+		aload pop
+	}
+	{
+		4 DIN_A 
+       		round exch round exch % dirty hack, might work
+	} ifelse
+] cvx def
+
+papersize
+= =
+
+
+% x -- arcsin(x)
+/arcsin {
+	dup dup abs div exch % sgn(x) x
+	dup mul % sgn(x) x**2
+	dup 1 exch sub % sgn(x) x**2 (1 - x**2)
+	div sqrt 1 atan mul % arcsin(x)=(sgn(x) * arctan(sqrt(x**2 /  (1 - x**2))))
+} def
+
+% x -- arcsin(x)
+/arccos {
+%	dup (arccos\() print 20 string cvs print (\) = ) print
+	1 add 2 div dup truncate sub 2 mul 1 sub % normalize x into [-1; +1]
+%	dup (arccos\() print 20 string cvs print (\) = ) print
+	dup
+	1 add exch
+	1 exch sub
+	div sqrt
+	1 atan 2 mul
+%	dup 20 string cvs print (\n) print
+} def
+
+/arcsin {
+	arccos
+	90 div
+	dup truncate sub
+	90 mul
+} def
+
+/to_rad_fact 2 3.1415926 mul 360 div def
+/to_deg_fact 1 to_rad_fact div def
+
+/to_rad {
+	to_rad_fact mul
+} def
+
+/to_deg {
+	to_deg_fact mul
+} def
+
+%/a 1 def
+% phi -- s(phi) 
+/archi {
+	dup dup mul 1 add sqrt % phi X=sqrt(phi**2 + 1)
+	dup 2 index % phi X X phi
+	mul 3 1 roll % Y=(X * phi) phi X
+	add % Y Z=(X + phi)
+	ln add % (Y + ln(Z))
+	2 div
+	a mul
+} def
+
+
+
+/xdist 15 1 mul def
+/ydist 30 1 mul def
+/margin 40 def
+/Courier findfont
+25 scalefont
+setfont
+
+/yoff 50 def
+/ypos ydist 1 mul def
+
+
+/a 1.2 def
+% move  (0, 0) into the center of the page
+papersize 2 div exch 2 div exch translate
+
+0 ypos moveto
+
+/digit_idx 0 def
+/phi 0 def
+/ypos ydist 1 mul def
+
+/rmax 
+	papersize  % x y
+	dup mul exch dup % y**2 x**2
+	mul add sqrt 2 div  % rmax=sqrt(x**2 + y**2)
+	def
+
+/limit rmax ypos sub ydist div 1 add 
+%	360 div 
+%	2 mul 3.1415926 mul 
+	dup mul 
+	xdist mul 2 div 
+	def
+
+limit =
+flush
+
+
+0
+{
+	% c
+	dup 1 add exch
+	0 ypos moveto
+	pi_hex_digit
+	16 5 string cvrs % ypos' phi' idx' ("digit")
+	dup
+	show
+	stringwidth % wx wy
+	pop
+%	(wy:) print = dup (wx:) print =
+%	(ypos:) print ypos =
+	ypos div arcsin
+%	(alpha:) print dup =
+	dup -1 mul rotate
+	ydist mul 360 div ypos add /ypos exch def
+	ypos ydist sub rmax ge { exit } if
+%	currentpoint
+%	0 0 moveto
+%	(x) show
+%	moveto
+} loop
+
+(computed ) print = ( digits\n) print
+
+(execution took ) print usertime starttime sub = ( milliseconds\n) print
+
+%/bits_per_int dbgP
+%/SHIFT dbgP
+%/papersize dbgP
+%20 string cvs (printed ) print print (digits) print
+
+showpage
+
+%prompt
