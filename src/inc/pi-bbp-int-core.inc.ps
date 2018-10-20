@@ -25,6 +25,31 @@
 %
 % S(j) = sum{k = 0 to infinite}{ (1 / 16**k) * (1 / (8*k + j)) }
 
+(cheat_hex.ps) runlibfile
+/pi_hex_digit_cheat /pi_hex_digit load def
+/pi_hex_digit where { /pi_hex_digit undef } if
+
+
+
+/starttime usertime def
+
+systemdict /runlibfile known not {
+	/runlibfile /run cvx def
+} if
+
+currentdict /__trigo_inc_ps__ known not {
+	(trigo.inc.ps) runlibfile
+} if
+
+currentdict /__paper_inc_ps__ known not {
+	(paper.inc.ps) runlibfile
+} if
+
+currentdict /__aux_inc_ps__ known not {
+	(aux.inc.ps) runlibfile
+} if
+
+
 
 /bits_per_int
 1 1 
@@ -42,6 +67,37 @@ bits_per_int 20 string cvs print
 
 /digits_per_int bits_per_int bits_per_digit idiv def
 
+% x -- len(x)
+/bitlength {
+	% x
+	0
+	{
+		% x a
+		exch dup % a x x
+		0 eq { exit } if
+		-1 bitshift % a x'
+		exch        % x' a
+		1 add       % x' a'
+	} loop
+	pop
+} def
+
+% x n -- x*(2**n)
+/fbitshift {
+	dup 0 ge 
+	{
+		% x n
+		{
+			2 mul
+		} repeat
+	}
+	{
+		neg % x -n
+		{
+			2 div
+		} repeat
+	} ifelse
+} def
 
 /M 1 bits_per_int bits_per_digit 2 mul 1 add sub bitshift def
 
@@ -75,46 +131,131 @@ bits_per_int 20 string cvs print
 	exch pop
 } def
 
+% x -- rev(x)
+% prefixes the reversed bitstring with a single '1'-bit 
+/bitreverse {
+	1 % x a
+	exch
+	{
+		% a x
+		dup 0 eq { exit } if
+		dup 1 and % a x lsb(x)
+		3 -1 roll % x lsb(x) a
+		1 bitshift add % x a'
+		exch % a' x
+		-1 bitshift % a' x'
+	} loop
+	pop
+} def
 
-/SHIFT bits_per_int bits_per_digit idiv 1 sub bits_per_digit mul def
+% e m -- ((16**e) mod m)
+/pow16_mod {
+	/modulus exch def
+	% e 
+%	(reverse e\() print dup 20 string cvs print (\) = ) print flush
+	bitreverse % e'
+%	dup = flush
+	1 % the accumulator
+	{
+		% e a
+		1 index % e a e
+		1 eq { exit } if
+		dup mul % e a'
+		modulus mod  % e a'
+		exch % a' e
+		dup -1 bitshift exch % a' e' e
+		1 and 1 eq
+		{
+			% a' e'
+			exch % e' a'
+			16 mul modulus mod % e' a''
+		} {
+			exch % e' a''
+		} ifelse
+	} loop
+	% e a
+	exch
+	pop
+} def
+
+/MAX_b 1 bits_per_int 1 sub bitshift def
+
+
+/SHIFT bits_per_int bits_per_digit idiv 4 sub bits_per_digit mul def
 %/SHIFT 27 def
+
+
 % n j -- S_j(n)
+% S(j,n) :=   SUM(k=0; k<=n; 16**(n - k) mod (8 * k +j) / (8 * k + j)) 
+%           + SUM(k=n+1; k < infinity; 16**(n - k) / (8 * k + j)
+(SHIFT = ) print SHIFT =
+/x_shift SHIFT def
+
 /Sx
   {
   	% n m(=j)
-  	0 % accu
-  	0 1 4 index { % n m accu 0 1 n % for (k in [0 .. n])
+  	/x_shift
+  	  2 index	% -- n j /xshift n
+  	  dup 0 lt { pop 0 } if
+	  bitlength
+	  8 add bits_per_int exch sub
+    def
+%%  	(x_shift = ) print x_shift =
+  	0 % n j accu
+  	0 1 4 index 
+  	% n m accu 0 1 n % for (k in [0 .. n]) 
+  	{
   		% n m accu k
   		3 index exch sub % n m accu (n - k)
-  		16 exch 3 index % n m accu 16 (n - k) m
-  		pow_mod SHIFT bitshift % n m accu X
-  		2 index idiv % n m accu (X / m)
+  		2 index % n m accu (n - k) m
+%%  		1 index (exp: ) print 20 string cvs print ( mod: ) print dup =
+  		pow16_mod % n m accu X'
+%%  		(pre-fbitshift: ) print dup xprint (\n) print
+		x_shift bitshift  % n m accu X
+%%  		(post-fbitshift: ) print dup xprint (\n) print
+  		2 index 
+%%  		(m: ) print dup =
+  		idiv  cvi % n m accu (X / m)
+%%  		(post-cvi: ) print dup xprint(\n) print
   		add % n m accu'
+%%	  	1 x_shift bitshift 1 sub and % mask accu
+%%  		(masked accu: ) print dup xprint(\n) print
   		exch 8 add exch % n m' accu'
   	} for
+%  	SHIFT x_shift sub bitshift
+%%	(right sum: ) print dup xprint (\n) print
   	% n m' accu
-  	exch SHIFT 4 idiv 1 sub 8 mul add exch % n j (m' + 8 * SHIFT / 4) accu
-	3 -1 roll % m' accu n
-	1 exch % m' accu v n
-	dup 1 add exch % m' accu v (n + 1) n
-	SHIFT 4 idiv add % m' accu v (n + 1) (n + SHIFT / 4)
-  	exch -1 exch % m' accu v (n + SHIFT / 4) -1 (n + 1)
-  	{
-  		% m accu v k
-  		pop
-  		dup 3 index % m accu v v m
-  		idiv % m accu v X
-  		4 -1 roll % accu v' X m
-  		8 sub % accu v X m'
-  		4 1 roll % m' accu v X
-  		3 -1 roll % m' v X accu
-  		add exch % m' accu' v
-  		16 mul % m accu v'
-  	} for
-  	pop % m accu
-  	exch pop
+  	1 x_shift 4 sub bitshift % n m' accu 1<<(x_shift - 4)
+  	0 4 x_shift
+	{
+		% n m accu v c
+		pop 
+		% n m accu v
+		dup -4 bitshift % n m accu v v'
+		4 -1 roll % n accu v v' m
+		dup 8 add % n accu v v' m m'
+		4 1 roll  % n accu m' v v' m
+		3 -1 roll % n accu m' v' m v
+		exch idiv % n accu m' v' X
+%%		(X: ) print dup xprint (\n) print
+		4 -1 roll % n m' v' X accu
+		add       % n m' v' accu'
+%%		(accu': ) print dup xprint (\n) print
+		exch      % n m' accu' v'
+		dup 0 eq { exit } if
+	} for
+	% n m' accu' v'
+	pop
+	% n m' accu'
+	3 1 roll % accu n m'
+	pop pop
   	% accu
-  	1 SHIFT bitshift 1 sub and 
+%%	(pre-masked: ) print dup xprint (\n) print
+  	1 x_shift bitshift 1 sub 
+%%	(mask: ) print dup xprint (\n) print
+  	and 
+%%	(masked: ) print dup xprint (\n) print
+  	SHIFT x_shift sub bitshift
   } def
 
 
@@ -122,8 +263,6 @@ bits_per_int 20 string cvs print
 /S4x { 4 Sx } def
 /S5x { 5 Sx } def
 /S6x { 6 Sx } def
-
-/xprint { dup 16 20 string cvrs print} def
 
 % n -- x % x is the n-th digit of pi
 /pi_hex_digit {
@@ -136,7 +275,135 @@ bits_per_int 20 string cvs print
 	S5x sub     % n x3
 	exch        % x3 n
 	S6x sub     % x4
-	1 SHIFT bitshift 1 sub and
+%	1 SHIFT mul bitshift
+%	 1 sub and
+	
 	SHIFT 4 sub -1 mul bitshift
+	16#0f and
 } def
 
+true {
+0 1 1 index 43 add {
+% 0 1 1 index 43264 add {
+	dup dup dup  % c c c c
+	pi_hex_digit % c c c a
+	exch         % c c a c
+	pi_hex_digit_cheat % c c a b
+	dup 2 index  % c c a b b a
+	xprint       % c c a b b
+	3 -1 roll    % c c b b a
+	eq { (*) print pop } { (#) print xprint } ifelse % c c
+	0 eq { (.) print } if % c
+	( ) print
+	dup 0 ne exch
+	10 mod 0 eq and { (\n  ) print } if
+	flush
+} for
+} if
+
+true {
+	( @n=10000 : ) print
+	10000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
+
+	( @n=10e6 : ) print
+	1000000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
+
+	( @n=10e7 : ) print
+	10000000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
+} if
+
+false {
+0 1 1 index 30 add {
+	dup dup dup  % c c c c
+	pi_hex_digit % c c c a
+	exch         % c c a c
+	pi_hex_digit_cheat % c c a b
+	dup 2 index  % c c a b b a
+	xprint       % c c a b b
+	3 -1 roll    % c c b b a
+	eq { (*) print pop } { xprint } ifelse
+	0 eq { (.) print } if
+	dup 0 ne exch
+	10 mod 0 eq and { (\n  ) print } if
+} for
+} if
+
+% n j -- 
+/pSx {
+	(S) print
+	% n j
+	dup 1 string cvs print
+	% n j
+	1 index
+	% n j n
+	(\() print 20 string cvs print (\) = ) print
+	% n j
+	Sx
+	xprint
+} def
+
+% n
+/pSall {
+	(\t) print
+	dup 1 pSx
+	(\t) print
+	dup 4 pSx
+	(\t) print
+	dup 5 pSx
+	(\t) print
+	    6 pSx
+	(\n) print
+} def
+
+true {
+44 1 50 {
+	pSall
+} for
+} if
+
+false {
+2 1 2 {
+	dup 
+	S1x
+	(\nS1\() print 
+	exch 10 string cvs print
+	(\) = ) print 
+	xprint (\n) print
+} for
+} if
+
+false {
+	1 1 16 {
+		% c
+		(16**0 mod ) print
+		dup 5 string cvs print
+		( = ) print
+		0 exch pow16_mod =
+	} for
+} if
+
+false {
+	1 1 16 {
+		% c
+		(16**1 mod ) print
+		dup 5 string cvs print
+		( = ) print
+		1 exch pow16_mod =
+	} for
+} if
+(execution took ) print usertime starttime sub = ( milliseconds\n) print
