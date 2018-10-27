@@ -1,0 +1,135 @@
+%!PS PostScript document
+
+% author:  bg nerilex
+% email:   bg@nerilex.org
+% date:    2017-10-02
+% license: GPLv3 
+
+%    Copyright (C) 2008 - 2017 bg nerilex
+%
+%    This program is free software: you can redistribute it and/or modify
+%    it under the terms of the GNU General Public License as published by
+%    the Free Software Foundation, either version 3 of the License, or
+%    (at your option) any later version.
+%
+%    This program is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%    GNU General Public License for more details.
+%
+%    You should have received a copy of the GNU General Public License
+%    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+currentdict /__aux_inc_ps__ known not {
+
+/__aux_inc_ps__ true def
+
+/float_mantissa_bits
+1
+{
+	% n
+	1.0 1 2 index % n a 1 n
+	bitshift div  % n 1**(-n)
+	1.0 add 1.0 eq % n bool
+	{
+		% we found the limit
+		1 sub exit
+	} {
+		1 add
+	} ifelse
+} loop def
+
+/float_exponent_bits
+save
+errordict /undefinedresult { cleartomark exit } put
+1 mark 2.0
+{
+	% n --mark-- a
+	dup mul % n --mark--  a**2 
+	% mul may raise an undefinedresult error
+	3 -1 roll % --mark--  a**2 n 
+	1 add  % --mark--  a**2 n'
+	3 1 roll % n' --mark--  a**2
+} loop 
+exch
+restore
+def
+
+/bits_per_int
+1 1 
+{
+  dup 0 le { pop exit } if
+  exch 1 add
+  exch 1 bitshift
+} loop def
+
+% proc -- 
+/time_measure {
+	usertime
+	mark
+	% proc usertime mark
+	3 -1 roll
+	% usertime mark proc
+	exec
+	cleartomark
+	% usertime
+	usertime exch sub % delta
+	(execution took ) print 30 string cvs print ( milliseconds\n) print
+} def
+
+
+/xprint { 16 20 string cvrs print} def
+
+/cvs32 {
+	32 string cvs
+} def
+
+% this is a workaround for Bug700011 (https://bugs.ghostscript.com/show_bug.cgi?id=700011) in ghostscript
+
+/xprint32 { 16#FFFFFFFF and 16 8 string cvrs print} def
+
+% X -- 
+/xprint {
+	% get the upper 32 bit
+	dup -32 bitshift % X H
+	dup 0 ne {
+		xprint32
+		% X
+		% we still have to fill up the low half wit zeros
+		dup 16#FFFFFFFF and 16 8 string cvrs
+		% X Lstr
+		length 8 exch sub
+		% X #zeros
+		(00000000) 0 %  X #zeros (00000000) 0 
+		3 -1 roll    %  X (00000000) 0 #zeros
+		getinterval print % X
+	} {
+		% X H
+		pop
+	} ifelse
+	% X
+	xprint32
+} def
+
+/aprint { cvs32 print} def
+
+/_aprint { dup aprint} def
+/_xprint { dup xprint} def
+
+
+/dbgP {
+	margin currentpoint exch pop ydist sub moveto
+	(Value of ) show
+	dup 20 string cvs show
+	(: ) show
+	mark exch cvx exec
+	counttomark
+	{
+	20 string cvs show
+	counttomark 0 ne { (, ) show } if
+	} repeat
+	pop
+} def
+
+
+} if

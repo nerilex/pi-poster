@@ -28,65 +28,35 @@ systemdict /runlibfile known not {
 	/runlibfile /run cvx def
 } if
 
+currentdict /__trigo_inc_ps__ known not {
+	(trigo.inc.ps) runlibfile
+} if
+
+currentdict /__paper_inc_ps__ known not {
+	(paper.inc.ps) runlibfile
+} if
+
+currentdict /__aux_inc_ps__ known not {
+	(aux.inc.ps) runlibfile
+} if
+
+(cheat_hex.ps) runlibfile
+
 
 currentdict /pi_hex_digit known not {
 	(pi-bbp-int-core.inc.ps) runlibfile
 } if
 
 
-/dbgP {
-	margin currentpoint exch pop ydist sub moveto
-	(Value of ) show
-	dup 20 string cvs show
-	(: ) show
-	mark exch cvx exec
-	counttomark
-	{
-	20 string cvs show
-	counttomark 0 ne { (, ) show } if
-	} repeat
-	pop
-} def
-
-
 
 0 1 1 index 30 add {
 	dup dup
 	pi_hex_digit 
-	xprint pop
+	xprint
 	0 eq { (.) print } if
 	dup 0 ne exch
 	10 mod 0 eq and { (\n  ) print } if
 } for
-
-
-/paper_autosize true def
-
-/inch {	72 mul } def
-/cm { inch 2.54 div } def
-/DIN_A_ratio  2 sqrt  def
-/DIN_A_0 [ 100 cm 100 cm mul DIN_A_ratio div sqrt dup DIN_A_ratio mul ] cvx def % A = 1 qm
-/DIN_A { % a -- x y 	a is the number of th DIN A, x and y are the corresponding sizes
-	dup 0 eq 
-		{ pop DIN_A_0 }
-		{ 1 sub DIN_A 2 div exch } ifelse
-} def
-
-
-/all_scale { 1 div } def
-
-/papersize [
-	paper_autosize
-	{
-		currentpagedevice
-		/PageSize get
-		aload pop
-	}
-	{
-		4 DIN_A 
-       		round exch round exch % dirty hack, might work
-	} ifelse
-] cvx def
 
 papersize
 = =
@@ -115,54 +85,6 @@ papersize % x y
 exch pop 0 exch lineto
 closepath
 } if
-
-systemdict /arccos known not {
-% x -- arcsin(x)
-/arccos {
-%	dup (arccos\() print 20 string cvs print (\) = ) print
-	1 add 2 div dup truncate sub 2 mul 1 sub % normalize x into [-1; +1]
-%	dup (arccos\() print 20 string cvs print (\) = ) print
-	dup
-	1 add exch
-	1 exch sub
-	div sqrt
-	1 atan 2 mul
-%	dup 20 string cvs print (\n) print
-} def
-} if
-
-systemdict /arcsin known not {
-/arcsin {
-	arccos
-	90 div
-	dup truncate sub
-	90 mul
-} def
-} if
-
-/to_rad_fact 2 3.1415926 mul 360 div def
-/to_deg_fact 1 to_rad_fact div def
-
-/to_rad {
-	to_rad_fact mul
-} def
-
-/to_deg {
-	to_deg_fact mul
-} def
-
-%/a 1 def
-% phi -- s(phi) 
-/archi {
-	dup dup mul 1 add sqrt % phi X=sqrt(phi**2 + 1)
-	dup 2 index % phi X X phi
-	mul 3 1 roll % Y=(X * phi) phi X
-	add % Y Z=(X + phi)
-	ln add % (Y + ln(Z))
-	2 div
-	a mul
-} def
-
 
 
 /margin 40 def

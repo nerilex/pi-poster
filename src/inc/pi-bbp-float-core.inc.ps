@@ -1,6 +1,4 @@
 %!PS PostScript document
-%%DocumentMedia: a4 595 842 0 () ()
-%%Orientation: Portrait
 
 % author:  bg nerilex
 % email:   bg@nerilex.org
@@ -26,18 +24,40 @@
 % pi = 4*S(1) - 2*S(4) - S(5) - S(6)
 %
 % S(j) = sum{k = 0 to infinite}{ (1 / 16**k) * (1 / (8*k + j)) }
+/starttime usertime def
 
+systemdict /runlibfile known not {
+	/runlibfile /run cvx def
+} if
 
-/bits_per_int
-1 1 
-{
-  dup 0 le { pop exit } if
-  exch 1 add
-  exch 1 bitshift
-} loop def
+currentdict /__cheat_hex_inc_ps__ known not {
+	(cheat_hex.ps) runlibfile
+	/pi_hex_digit_cheat /pi_hex_digit load def
+	/pi_hex_digit where { /pi_hex_digit undef } if
+} if
+
+currentdict /__trigo_inc_ps__ known not {
+	(trigo.inc.ps) runlibfile
+} if
+
+currentdict /__paper_inc_ps__ known not {
+	(paper.inc.ps) runlibfile
+} if
+
+currentdict /__aux_inc_ps__ known not {
+	(aux.inc.ps) runlibfile
+} if
 
 (useable bits in an integer: ) print
-bits_per_int 20 string cvs print
+bits_per_int aprint
+(\n) print
+
+(useable bits in float mantissa: ) print
+float_mantissa_bits aprint
+(\n) print
+
+(useable bits in float exponent: ) print
+float_exponent_bits aprint
 (\n) print
 
 /bits_per_digit 4 def
@@ -77,6 +97,17 @@ bits_per_int 20 string cvs print
 	exch pop
 } def
 
+/pow16_mod {
+	16
+	3 1 roll
+	pow_mod
+} def
+
+% x -- frac(x)
+% returns the fractional part of x
+/frac {
+	dup truncate sub
+} def
 
 /SHIFT bits_per_int bits_per_digit idiv 1 sub bits_per_digit mul def
 %/SHIFT 27 def
@@ -91,8 +122,9 @@ bits_per_int 20 string cvs print
   		16 exch 3 index % n m accu 16 (n - k) m
   		pow_mod % n m accu X
   		2 index div % n m accu (X / m)
-  		dup truncate sub % n m accu frac(X / m)
+  		frac % n m accu frac(X / m)
   		add % n m accu'
+  		frac
   		exch 8 add exch % n m' accu'
   	} for
   	% n m' accu
@@ -104,6 +136,7 @@ bits_per_int 20 string cvs print
 		dup 0 eq { exit } if
 		3 -1 roll % n m v' s accu
 		add % n m v' accu'
+		frac
 		3 -1 roll % n v' accu' m
 		8 add % n v' accu' m'
 		3 1 roll % n m' v' accu'
@@ -112,17 +145,15 @@ bits_per_int 20 string cvs print
 	% n m accu v' s
 	5 -2 roll % accu v' s n m
 	pop pop pop pop % accu
+	frac
   } def
 
 
-/xprint { dup 16 20 string cvrs print} def
-/fprint { dup 20 string cvs print} def
-
 /DEBUG false def
-/S1x { 1 Sx DEBUG { (DBG: S1 = ) print fprint (\n) print } if } def
-/S4x { 4 Sx DEBUG { (DBG: S4 = ) print fprint (\n) print } if  } def
-/S5x { 5 Sx DEBUG { (DBG: S5 = ) print fprint (\n) print } if  } def
-/S6x { 6 Sx DEBUG { (DBG: S6 = ) print fprint (\n) print } if  } def
+/S1x { DEBUG { (\nDBG: S1[) print _aprint (] = ) print} if 1 Sx DEBUG { _aprint } if } def
+/S4x { DEBUG { (\nDBG: S4[) print _aprint (] = ) print} if 4 Sx DEBUG { _aprint } if } def
+/S5x { DEBUG { (\nDBG: S5[) print _aprint (] = ) print} if 5 Sx DEBUG { _aprint } if } def
+/S6x { DEBUG { (\nDBG: S6[) print _aprint (] = ) print} if 6 Sx DEBUG { _aprint (\n) print} if } def
 
 
 % n -- x % x is the n-th digit of pi
@@ -130,15 +161,19 @@ bits_per_int 20 string cvs print
 	1 sub
 	dup dup dup % n n n n
     S1x 4 mul   % n n n x1
+    frac
     exch        % n n x1 n
-	S4x 2 mul sub % n n x2
+	S4x 2 mul frac sub frac % n n x2
 	exch        % n x2 n
 	S5x sub     % n x3
+    frac
 	exch        % x3 n
 	S6x sub     % x4
-  	dup truncate sub % frac(accu)
+  	frac % frac(accu)
 	dup 0 lt { 1 add } if
 	16 mul 
+	% to do rounding, we add the minimum delta
+	1.0 1 float_mantissa_bits 6 sub bitshift div add
 %	dup = 
 	cvi
 	16#0f and
@@ -146,108 +181,122 @@ bits_per_int 20 string cvs print
 %	SHIFT 4 sub -1 mul bitshift
 } def
 
-false
-{
-0 1 1 index 50 add {
-	dup dup
-	pi_hex_digit
-	xprint pop
-	0 eq { (.) print } if
-	dup 0 ne exch
-	10 mod 0 eq and { (\n  ) print } if
-	flush
-} for
-
-
-/paper_autosize false def
-
-/inch {	72 mul } def
-/cm { inch 2.54 div } def
-/DIN_A_ratio  2 sqrt  def
-/DIN_A_0 [ 100 cm 100 cm mul DIN_A_ratio div sqrt dup DIN_A_ratio mul ] cvx def % A = 1 qm
-/DIN_A { % a -- x y 	a is the number of th DIN A, x and y are the corresponding sizes
-	dup 0 eq 
-		{ pop DIN_A_0 }
-		{ 1 sub DIN_A 2 div exch } ifelse
-} def
-
-
-/all_scale { 1 div } def
-
-/papersize [
-	paper_autosize
+% start length -- 
+/verbose_test {
+	1 index add % start stop
+	1 exch % start 1 stop
 	{
-		currentpagedevice
-		/PageSize get
-		aload pop
-	}
-	{
-		4 DIN_A 
-		round exch round exch % dirty hack, might work
-	} ifelse
-] cvx def
-
-papersize
-= =
-
-/xdist 15 2 mul def
-/ydist 30 1 mul def
-/margin 40 def
-/Courier findfont
-25 scalefont
-setfont
-
-/ypos 200 def
-
-0 % index of first digit
-papersize exch pop margin sub ydist 2 mul sub 
-ydist -1 mul 
-papersize exch pop 2 div
-{
-	% idx ypos
-	margin xdist papersize pop margin sub {
-		% idx ypos xpos
-		1 index moveto % idx ypos
-		2 1 roll dup % ypos idx idx
-		pi_hex_digit
-		16 5 string cvrs
-		show
-		% ypos idx
-		1 add exch % idx' ypos
+		dup dup dup  % c c c c
+		pi_hex_digit % c c c a
+		exch         % c c a c
+		pi_hex_digit_cheat % c c a b
+		dup 2 index  % c c a b b a
+		xprint       % c c a b b
+		3 -1 roll    % c c b b a
+		eq { (*) print pop } { (#) print xprint } ifelse % c c
+		0 eq { (.) print } if % c
+		( ) print
+		dup 0 ne exch
+		10 mod 0 eq and { (\n  ) print } if
+		flush
 	} for
-	pop
-} for
-
-/dbgP {
-	margin currentpoint exch pop ydist sub moveto
-	(Value of ) show
-	dup 20 string cvs show
-	(: ) show
-	mark exch cvx exec
-	counttomark
-	{
-	20 string cvs show
-	counttomark 0 ne { (, ) show } if
-	} repeat
-	pop
+	(\n) print
 } def
 
+/DEBUG true def
+4328 3 verbose_test
+/DEBUG false def
 
-20 string cvs (printed ) print print (digits\n) print
+false {
+	( @n=10000 : ) print
+	10000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
 
-/bits_per_int dbgP
-/SHIFT dbgP
-/papersize dbgP
-/product dbgP
-/version dbgP
-/revision dbgP
-/serialnumber dbgP
-/languagelevel dbgP
-/usertime dbgP
-/realtime dbgP
+	( @n=10e6 : ) print
+	1000000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
 
-%20 string cvs (printed ) print print (digits) print
+	( @n=10e7 : ) print
+	10000000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
+} if
 
-showpage
+/test_pi_hex_digit {
+	(\n== test_pi_hex_digit ==\n) print
+ 	/errorcnt 0 def
+ 	/successcnt 0 def
+	 0 1 pi_hex_cheat_digits_num {
+	 	/ctr exch def
+		ctr 64 mod 0 eq 
+		{
+			(\n  [) print
+			ctr cvs32 dup % "ctr" "ctr" 
+			length 5 exch sub % "ctr"  5-len("ctr")
+			(     ) 0 
+			3 -1 roll
+			getinterval print print
+			(]: ) print
+		} if
+		flush
+	 	
+		ctr pi_hex_digit
+		ctr pi_hex_digit_cheat % c c a b
+		eq { 
+			/successcnt successcnt 1 add def
+			(*) print
+		} {
+			/errorcnt errorcnt 1 add def
+			(\nError @ ) print ctr cvs32 print 
+			( is: )      print ctr pi_hex_digit xprint
+			( should: )  print ctr pi_hex_digit_cheat xprint
+			( \(#) print errorcnt cvs32 print (\)\n  ) print
+			flush
+		} ifelse % c c
+	} for
+	(\n Errors:  ) print errorcnt cvs32 print (\n  ) print
+	( Success: ) print successcnt cvs32 print (\n  ) print
+} def
 
+test_pi_hex_digit
+
+false {
+	1 1 16 {
+		% c
+		(16**0 mod ) print
+		dup 5 string cvs print
+		( = ) print
+		0 exch pow16_mod =
+	} for
+} if
+
+false {
+	1 1 16 {
+		% c
+		(16**1 mod ) print
+		dup 5 string cvs print
+		( = ) print
+		1 exch pow16_mod =
+	} for
+} if
+
+false {
+	1 1 16 {
+		% c
+		(16**2 mod ) print
+		dup 5 string cvs print
+		( = ) print
+		2 exch pow16_mod =
+	} for
 } if

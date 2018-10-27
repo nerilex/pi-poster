@@ -25,16 +25,16 @@
 %
 % S(j) = sum{k = 0 to infinite}{ (1 / 16**k) * (1 / (8*k + j)) }
 
-(cheat_hex.ps) runlibfile
-/pi_hex_digit_cheat /pi_hex_digit load def
-/pi_hex_digit where { /pi_hex_digit undef } if
-
-
-
 /starttime usertime def
 
 systemdict /runlibfile known not {
 	/runlibfile /run cvx def
+} if
+
+currentdict /__cheat_hex_inc_ps__ known not {
+	(cheat_hex.ps) runlibfile
+	/pi_hex_digit_cheat /pi_hex_digit load def
+	/pi_hex_digit where { /pi_hex_digit undef } if
 } if
 
 currentdict /__trigo_inc_ps__ known not {
@@ -48,8 +48,6 @@ currentdict /__paper_inc_ps__ known not {
 currentdict /__aux_inc_ps__ known not {
 	(aux.inc.ps) runlibfile
 } if
-
-
 
 /bits_per_int
 1 1 
@@ -226,7 +224,7 @@ bits_per_int 20 string cvs print
 %%	(right sum: ) print dup xprint (\n) print
   	% n m' accu
   	1 x_shift 4 sub bitshift % n m' accu 1<<(x_shift - 4)
-  	0 4 x_shift
+  	0 4 x_shift 2 mul %% XXX raising the limit to increase precision?
 	{
 		% n m accu v c
 		pop 
@@ -267,14 +265,11 @@ bits_per_int 20 string cvs print
 % n -- x % x is the n-th digit of pi
 /pi_hex_digit {
 	1 sub
-	dup dup dup % n n n n
-    S1x 4 mul   % n n n x1
-    exch        % n n x1 n
-	S4x 2 mul sub % n n x2
-	exch        % n x2 n
-	S5x sub     % n x3
-	exch        % x3 n
-	S6x sub     % x4
+	/n exch def
+    n S1x 4 mul     % x1
+	n S4x 2 mul sub % x2
+	n S5x sub       % x3
+	n S6x sub       % x4
 %	1 SHIFT mul bitshift
 %	 1 sub and
 	
@@ -282,9 +277,63 @@ bits_per_int 20 string cvs print
 	16#0f and
 } def
 
-true {
-0 1 1 index 43 add {
-% 0 1 1 index 43264 add {
+/test_pi_hex_digit {
+	(\n== test_pi_hex_digit ==\n) print
+ 	/errorcnt 0 def
+ 	/successcnt 0 def
+	 0 1 pi_hex_cheat_digits_num {
+	 	/ctr exch def
+		ctr 64 mod 0 eq 
+		{
+			(\n  [) print
+			ctr cvs32 dup % "ctr" "ctr" 
+			length 5 exch sub % "ctr"  5-len("ctr")
+			(     ) 0 
+			3 -1 roll
+			getinterval print print
+			(]: ) print
+		} if
+		flush
+	 	
+		ctr pi_hex_digit
+		ctr pi_hex_digit_cheat % c c a b
+		eq { 
+			/successcnt successcnt 1 add def
+			(*) print
+		} {
+			/errorcnt errorcnt 1 add def
+			(\nError @ ) print ctr cvs32 print 
+			( is: )      print ctr pi_hex_digit xprint
+			( should: )  print ctr pi_hex_digit_cheat xprint
+			( \(#) print errorcnt cvs32 print (\)\n  ) print
+			flush
+		} ifelse % c c
+	} for
+	(\n Errors:  ) print errorcnt cvs32 print (\n  ) print
+	( Success: ) print successcnt cvs32 print (\n  ) print
+} def
+
+test_pi_hex_digit
+
+/errorLocations [
+2270 2910 3170 3310 3950 4300 5269 5270 5610 5770 6300 7260 7360 7470 7600 8250 
+8270 8550 9980 10100 10790 11440 11650 11970 11990 12310 12390 12500 13250 
+13420 14380 15360 15770 15790 15840 15900 16000 16060 16320 16430 16800 16880 
+17010 18110 18250 18450 18650 18730 18960 19040 19070 19140 19250 19300 19480 
+19650 20340 20440 20670 20890 21050 21330 21460 21690 21900 21940 22000 22330 
+23160 24030 24040 24100 24150 24270 24550 24650 24780 24820 25049 25050 26300 
+26480 26710 27130 27250 27399 27400 27490 27970 28490 28640 28780 28960 28990 
+29560 29600 29610 30170 30330 30660 31180 31270 31470 31530 31940 32590 32950 
+32960 33100 33260 33510 33530 33670 33800 34320 34350 34530 34550 34600 34799 
+34800 34920 35010 35080 35350 35540 35760 35840 35889 35890 36010 36110 36650 
+36900 37190 37310 37410 37620 37829 37830 38130 38450 38660 38740 38870 39180 
+39270 39299 39300 39549 39550 39560 39620 39660 40310 40550 40780 40840 40910 
+41010 41090 41310 41350 41550 41620 41640 41690 41810 41890 41930 42160 42279 
+42280 42480 42590 42870 42880
+] def
+
+false {
+ 0 1 1 index pi_hex_cheat_digits_num add {
 	dup dup dup  % c c c c
 	pi_hex_digit % c c c a
 	exch         % c c a c
@@ -301,7 +350,22 @@ true {
 } for
 } if
 
-true {
+false {
+	1000 1000 10000 {
+		/ctr exch def
+		( @n=) print ctr 20 string cvs print ( : ) print
+		{	
+			ctr
+			pi_hex_digit
+			xprint
+		} time_measure
+		flush
+	} for
+	(\n  ) print
+
+} if
+
+false {
 	( @n=10000 : ) print
 	10000 1 1 index 16 add {
 		pi_hex_digit % c c c a
@@ -359,21 +423,44 @@ false {
 
 % n
 /pSall {
+	1 sub
+	/n exch def
 	(\t) print
-	dup 1 pSx
+	n 1 pSx
 	(\t) print
-	dup 4 pSx
+	n 4 pSx
 	(\t) print
-	dup 5 pSx
+	n 5 pSx
 	(\t) print
-	    6 pSx
+	n 6 pSx
 	(\n) print
 } def
 
 true {
-44 1 50 {
+0 1 3 {
+	errorLocations exch get
+	dup dup
+	(pi[) print cvs32 print (] = ) print
+	pi_hex_digit xprint
+	(   ) print
 	pSall
 } for
+} if
+
+false {
+errorLocations {
+	-1 1 1 {
+		1 index add
+		dup dup
+		(pi[) print cvs32 print (] = ) print
+		pi_hex_digit xprint
+		(   ) print
+		pop
+		% pSall
+	} for
+	pop
+	(\n) print
+} forall
 } if
 
 false {
@@ -407,3 +494,5 @@ false {
 	} for
 } if
 (execution took ) print usertime starttime sub = ( milliseconds\n) print
+
+
