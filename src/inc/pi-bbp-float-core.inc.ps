@@ -49,17 +49,11 @@ currentdict /__aux_inc_ps__ known not {
 	(aux.inc.ps) runlibfile
 } if
 
-(useable bits in an integer: ) print
-bits_per_int aprint
-(\n) print
+currentdict /__test_inc_ps__ known not {
+	(test.inc.ps) runlibfile
+} if
 
-(useable bits in float mantissa: ) print
-float_mantissa_bits aprint
-(\n) print
-
-(useable bits in float exponent: ) print
-float_exponent_bits aprint
-(\n) print
+print_profile
 
 /bits_per_digit 4 def
 
@@ -182,93 +176,9 @@ float_exponent_bits aprint
 %	SHIFT 4 sub -1 mul bitshift
 } def
 
-% start length -- 
-/verbose_test {
-	1 index add % start stop
-	1 exch % start 1 stop
-	{
-		dup dup dup  % c c c c
-		pi_hex_digit % c c c a
-		exch         % c c a c
-		pi_hex_digit_cheat % c c a b
-		dup 2 index  % c c a b b a
-		xprint       % c c a b b
-		3 -1 roll    % c c b b a
-		eq { (*) print pop } { (#) print xprint } ifelse % c c
-		0 eq { (.) print } if % c
-		( ) print
-		dup 0 ne exch
-		10 mod 0 eq and { (\n  ) print } if
-		flush
-	} for
-	(\n) print
-} def
-
 /DEBUG true def
-4328 3 verbose_test
+%4328 3 verbose_test
 /DEBUG false def
-
-false {
-	( @n=10000 : ) print
-	10000 1 1 index 16 add {
-		pi_hex_digit % c c c a
-		xprint       % c c a b b
-		flush
-	} for
-	(\n  ) print
-
-	( @n=10e6 : ) print
-	1000000 1 1 index 16 add {
-		pi_hex_digit % c c c a
-		xprint       % c c a b b
-		flush
-	} for
-	(\n  ) print
-
-	( @n=10e7 : ) print
-	10000000 1 1 index 16 add {
-		pi_hex_digit % c c c a
-		xprint       % c c a b b
-		flush
-	} for
-	(\n  ) print
-} if
-
-/test_pi_hex_digit {
-	(\n== test_pi_hex_digit ==\n) print
- 	/errorcnt 0 def
- 	/successcnt 0 def
-	 0 1 pi_hex_cheat_digits_num {
-	 	/ctr exch def
-		ctr 64 mod 0 eq 
-		{
-			(\n  [) print
-			ctr cvs32 dup % "ctr" "ctr" 
-			length 5 exch sub % "ctr"  5-len("ctr")
-			(     ) 0 
-			3 -1 roll
-			getinterval print print
-			(]: ) print
-		} if
-		flush
-	 	
-		ctr pi_hex_digit
-		ctr pi_hex_digit_cheat % c c a b
-		eq { 
-			/successcnt successcnt 1 add def
-			(*) print
-		} {
-			/errorcnt errorcnt 1 add def
-			(\nError @ ) print ctr cvs32 print 
-			( is: )      print ctr pi_hex_digit xprint
-			( should: )  print ctr pi_hex_digit_cheat xprint
-			( \(#) print errorcnt cvs32 print (\)\n  ) print
-			flush
-		} ifelse % c c
-	} for
-	(\n Errors:  ) print errorcnt cvs32 print (\n  ) print
-	( Success: ) print successcnt cvs32 print (\n  ) print
-} def
 
 test_pi_hex_digit
 

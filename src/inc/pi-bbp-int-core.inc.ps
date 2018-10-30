@@ -50,13 +50,10 @@ currentdict /__aux_inc_ps__ known not {
 	(aux.inc.ps) runlibfile
 } if
 
-/bits_per_int
-1 1 
-{
-  dup 0 le { pop exit } if
-  exch 1 add
-  exch 1 bitshift
-} loop def
+currentdict /__test_inc_ps__ known not {
+	(test.inc.ps) runlibfile
+} if
+
 
 (useable bits in an integer: ) print
 bits_per_int 20 string cvs print
@@ -357,128 +354,6 @@ bits_per_int 20 string cvs print
 	pop
 } def
 
-/test_pi_hex_digit {
-	(\n== test_pi_hex_digit ==\n) print
- 	/errorcnt 0 def
- 	/successcnt 0 def
-	 0 1 pi_hex_cheat_digits_num {
-	 	/ctr exch def
-		ctr 64 mod 0 eq 
-		{
-			(\n  [) print
-			ctr cvs32 dup % "ctr" "ctr" 
-			length 5 exch sub % "ctr"  5-len("ctr")
-			(     ) 0 
-			3 -1 roll
-			getinterval print print
-			(]: ) print
-		} if
-		flush
-	 	
-		ctr pi_hex_digit
-		ctr pi_hex_digit_cheat % c c a b
-		eq { 
-			/successcnt successcnt 1 add def
-			(*) print
-		} {
-			/errorcnt errorcnt 1 add def
-			(\nError @ ) print ctr cvs32 print 
-			( is: )      print ctr pi_hex_digit xprint
-			( should: )  print ctr pi_hex_digit_cheat xprint
-			( \(#) print errorcnt cvs32 print (\)\n  ) print
-			flush
-		} ifelse % c c
-	} for
-	(\n Errors:  ) print errorcnt cvs32 print (\n  ) print
-	( Success: ) print successcnt cvs32 print (\n  ) print
-	flush
-} def
-
-/test_pi_hex_digit10 {
-	(\n== test_pi_hex_digit ==\n) print
- 	/errorcnt 0 def
- 	/successcnt 0 def
-	0 10 pi_hex_cheat_digits_num {
-		/ctr exch def
-		ctr 64 mod 0 eq 
-		{
-			(\n  [) print
-			ctr cvs32 dup % "ctr" "ctr" 
-			length 5 exch sub % "ctr"  5-len("ctr")
-			(     ) 0 
-			3 -1 roll
-			getinterval print print
-			(]: ) print
-		} if
-		flush
-	 	
-		ctr pi_hex_digit10
-		0 1 9 {
-			% <pi-digits> c
-	 		ctr add /ctr2 exch def
-			% <pi-digits>
-	 		/value exch def
-			ctr2 pi_hex_digit_cheat
-			value
-			eq { 
-				/successcnt successcnt 1 add def
-				(*) print
-			} {
-				/errorcnt errorcnt 1 add def
-				(\nError @ ) print ctr2 aprint 
-				( is: )      print value xprint
-				( should: )  print ctr2 pi_hex_digit_cheat xprint
-				( \(#) print errorcnt cvs32 print (\)\n  ) print
-				flush
-			} ifelse % c c
-		} for
-	} for
-	(\n Errors:  ) print errorcnt aprint (\n  ) print
-	( Success: ) print successcnt aprint (\n  ) print
-	(execution took ) print usertime starttime sub aprint ( milliseconds\n) print
-	flush
-} def
-
-/test_pi_hex_digit_X {
-	(\n== test_pi_hex_digit ==\n) print
- 	/errorcnt 0 def
- 	/successcnt 0 def
-	0 digits_per_call pi_hex_cheat_digits_num digits_per_call sub {
-%	0 digits_per_call 300 {
-		/ctr exch def
-		ctr pi_hex_digit_X
-		0 1 digits_per_call 1 sub {
-			% <pi-digits> c
-	 		ctr add /ctr2 exch def
-			% <pi-digits>
-	 		/value exch def
-			ctr2 64 mod 0 eq 
-			{
-				(\n  [) print
-				5 ctr2 align_iprint
-				(]: ) print
-			} if
-			flush
-			ctr2 pi_hex_digit_cheat
-			value
-			eq { 
-				/successcnt successcnt 1 add def
-				(*) print
-			} {
-				/errorcnt errorcnt 1 add def
-				(\nError @ ) print ctr2 aprint 
-				( is: )      print value xprint
-				( should: )  print ctr2 pi_hex_digit_cheat xprint
-				( \(#) print errorcnt aprint (\)\n  ) print
-				flush
-			} ifelse % c c
-		} for
-	} for
-	(\n Errors:  ) print errorcnt aprint (\n  ) print
-	( Success: ) print successcnt aprint (\n  ) print
-	(execution took ) print usertime starttime sub aprint ( milliseconds\n) print
-	flush
-} def
 
 test_pi_hex_digit_X
 

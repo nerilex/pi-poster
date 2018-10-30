@@ -1,0 +1,65 @@
+%!PS PostScript document
+%%DocumentMedia: a4 595 842 0 () ()
+%%Orientation: Portrait
+
+% author:  bg nerilex
+% email:   bg@nerilex.org
+% date:    2017-09-17
+% license: GPLv3 
+
+%    Copyright (C) 2008 - 2017 bg nerilex
+%
+%    This program is free software: you can redistribute it and/or modify
+%    it under the terms of the GNU General Public License as published by
+%    the Free Software Foundation, either version 3 of the License, or
+%    (at your option) any later version.
+%
+%    This program is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%    GNU General Public License for more details.
+%
+%    You should have received a copy of the GNU General Public License
+%    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+currentdict /__trigo_inc_ps__ known not {
+
+/__trigo_inc_ps__ true def
+
+systemdict /arccos known not {
+% x -- arccos(x)
+/arccos {
+%	dup (arccos\() print 20 string cvs print (\) = ) print
+	1 add 2 div dup truncate sub 2 mul 1 sub % normalize x into [-1; +1]
+%	dup (arccos\() print 20 string cvs print (\) = ) print
+	dup
+	1 add exch
+	1 exch sub
+	div sqrt
+	1 atan 2 mul
+%	dup 20 string cvs print (\n) print
+} def
+} if
+
+systemdict /arcsin known not {
+% x -- arcsin(x)
+/arcsin {
+	arccos
+	90 div
+	dup truncate sub
+	90 mul
+} def
+} if
+
+/to_rad_fact 2 3.1415926 mul 360 div def
+/to_deg_fact 1 to_rad_fact div def
+
+/to_rad {
+	to_rad_fact mul
+} def
+
+/to_deg {
+	to_deg_fact mul
+} def
+
+} if

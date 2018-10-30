@@ -1,0 +1,208 @@
+%!PS PostScript document
+%%DocumentMedia: a4 595 842 0 () ()
+%%Orientation: Portrait
+
+% author:  bg nerilex
+% email:   bg@nerilex.org
+% date:    2017-09-17
+% license: GPLv3 
+
+%    Copyright (C) 2008 - 2017 bg nerilex
+%
+%    This program is free software: you can redistribute it and/or modify
+%    it under the terms of the GNU General Public License as published by
+%    the Free Software Foundation, either version 3 of the License, or
+%    (at your option) any later version.
+%
+%    This program is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%    GNU General Public License for more details.
+%
+%    You should have received a copy of the GNU General Public License
+%    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+currentdict /__test_inc_ps__ known not {
+
+/__test_inc_ps__ true def
+
+currentdict /__aux_inc_ps__ known not {
+	(aux.inc.ps) runlibfile
+} if
+
+currentdict /test_limit known not {
+	/test_limit pi_hex_cheat_digits_num def
+} if
+
+
+% start length -- 
+/verbose_test {
+	1 index add % start stop
+	1 exch % start 1 stop
+	{
+		dup dup dup  % c c c c
+		pi_hex_digit % c c c a
+		exch         % c c a c
+		pi_hex_digit_cheat % c c a b
+		dup 2 index  % c c a b b a
+		xprint       % c c a b b
+		3 -1 roll    % c c b b a
+		eq { (*) print pop } { (#) print xprint } ifelse % c c
+		0 eq { (.) print } if % c
+		( ) print
+		dup 0 ne exch
+		10 mod 0 eq and { (\n  ) print } if
+		flush
+	} for
+	(\n) print
+} def
+
+/deep_test {
+	( @n=10000 : ) print
+	10000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
+
+	( @n=10e6 : ) print
+	1000000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
+
+	( @n=10e7 : ) print
+	10000000 1 1 index 16 add {
+		pi_hex_digit % c c c a
+		xprint       % c c a b b
+		flush
+	} for
+	(\n  ) print
+} def
+
+/test_pi_hex_digit {
+	(\n== test_pi_hex_digit ==\n) print
+	/errorcnt 0 def
+	/successcnt 0 def
+	/test_start_time usertime def
+	
+	0 1 test_limit {
+		/ctr exch def
+		ctr 64 mod 0 eq 
+		{
+			(  \(time: ) print usertime test_start_time sub aprint ( milliseconds\)) print
+			(\n  [) print
+			5 ctr align_iprint
+			(]: ) print
+		} if
+		flush
+	 	
+		ctr pi_hex_digit
+		ctr pi_hex_digit_cheat % c c a b
+		eq { 
+			/successcnt successcnt 1 add def
+			(*) print
+		} {
+			/errorcnt errorcnt 1 add def
+			(\nError @ ) print ctr cvs32 print 
+			( is: )      print ctr pi_hex_digit xprint
+			( should: )  print ctr pi_hex_digit_cheat xprint
+			( \(#) print errorcnt cvs32 print (\)\n  ) print
+			flush
+		} ifelse % c c
+	} for
+	(\n Errors:  ) print errorcnt aprint (\n  ) print
+	( Success: ) print successcnt aprint (\n  ) print
+	(execution took ) print usertime test_start_time sub aprint ( milliseconds\n) print
+	flush
+} def
+
+/test_pi_hex_digit10 {
+	(\n== test_pi_hex_digit ==\n) print
+	/errorcnt 0 def
+	/successcnt 0 def
+	/test_start_time usertime def
+	
+	0 10 test_limit {
+		/ctr exch def
+		ctr 64 mod 0 eq 
+		{
+			(\n  [) print
+			5 ctr align_iprint
+			(]: ) print
+		} if
+		flush
+	 	
+		ctr pi_hex_digit10
+		0 1 9 {
+			% <pi-digits> c
+	 		ctr add /ctr2 exch def
+			% <pi-digits>
+	 		/value exch def
+			ctr2 pi_hex_digit_cheat
+			value
+			eq { 
+				/successcnt successcnt 1 add def
+				(*) print
+			} {
+				/errorcnt errorcnt 1 add def
+				(\nError @ ) print ctr2 aprint 
+				( is: )      print value xprint
+				( should: )  print ctr2 pi_hex_digit_cheat xprint
+				( \(#) print errorcnt cvs32 print (\)\n  ) print
+				flush
+			} ifelse % c c
+		} for
+	} for
+	(\n Errors:  ) print errorcnt aprint (\n  ) print
+	( Success: ) print successcnt aprint (\n  ) print
+	(execution took ) print usertime test_start_time sub aprint ( milliseconds\n) print
+	flush
+} def
+
+/test_pi_hex_digit_X {
+	(\n== test_pi_hex_digit ==\n) print
+ 	/errorcnt 0 def
+ 	/successcnt 0 def
+ 	/test_start_time usertime def
+	0 digits_per_call test_limit digits_per_call sub {
+%	0 digits_per_call 300 {
+		/ctr exch def
+		ctr pi_hex_digit_X
+		0 1 digits_per_call 1 sub {
+			% <pi-digits> c
+	 		ctr add /ctr2 exch def
+			% <pi-digits>
+	 		/value exch def
+			ctr2 64 mod 0 eq 
+			{
+				(\n  [) print
+				5 ctr2 align_iprint
+				(]: ) print
+			} if
+			flush
+			ctr2 pi_hex_digit_cheat
+			value
+			eq { 
+				/successcnt successcnt 1 add def
+				(*) print
+			} {
+				/errorcnt errorcnt 1 add def
+				(\nError @ ) print ctr2 aprint 
+				( is: )      print value xprint
+				( should: )  print ctr2 pi_hex_digit_cheat xprint
+				( \(#) print errorcnt aprint (\)\n  ) print
+				flush
+			} ifelse % c c
+		} for
+	} for
+	(\n Errors:  ) print errorcnt aprint (\n  ) print
+	( Success: ) print successcnt aprint (\n  ) print
+	(execution took ) print usertime test_start_time sub aprint ( milliseconds\n) print
+	flush
+} def
+	
+} if

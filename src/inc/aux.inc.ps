@@ -131,6 +131,49 @@ def
 /_aprint { dup aprint} def
 /_xprint { dup xprint} def
 
+/print_profile {
+	true echo
+	(product: ) print
+	product print
+	(\n) print
+	
+	(version: ) print
+	version print
+	(\n) print
+
+	(revision: ) print
+	revision aprint
+	(\n) print
+	
+	(serialnumber: ) print
+	serialnumber aprint
+	(\n) print
+	
+	(languagelevel: ) print
+	languagelevel aprint
+	(\n) print
+
+	(realtime: ) print
+	realtime aprint
+	(\n) print
+
+	(usertime: ) print
+	usertime aprint
+	(\n) print
+
+	(useable bits in an integer: ) print
+	bits_per_int aprint
+	(\n) print
+	
+	(useable bits in float mantissa: ) print
+	float_mantissa_bits aprint
+	(\n) print
+	
+	(useable bits in float exponent: ) print
+	float_exponent_bits aprint
+	(\n) print
+	flush
+} def
 
 /dbgP {
 	margin currentpoint exch pop ydist sub moveto

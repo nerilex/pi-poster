@@ -1,0 +1,54 @@
+%!PS PostScript document
+% author:  bg nerilex
+% email:   bg@nerilex.org
+% date:    2017-09-17
+% license: GPLv3 
+
+%    Copyright (C) 2008 - 2017 bg nerilex
+%
+%    This program is free software: you can redistribute it and/or modify
+%    it under the terms of the GNU General Public License as published by
+%    the Free Software Foundation, either version 3 of the License, or
+%    (at your option) any later version.
+%
+%    This program is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%    GNU General Public License for more details.
+%
+%    You should have received a copy of the GNU General Public License
+%    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+currentdict /__paper_inc_ps__ known not {
+
+/__paper_inc_ps__ true def
+
+/paper_autosize true def
+
+/inch {	72 mul } def
+/cm { inch 2.54 div } def
+/DIN_A_ratio  2 sqrt  def
+/DIN_A_0 [ 100 cm 100 cm mul DIN_A_ratio div sqrt dup DIN_A_ratio mul ] cvx def % A = 1 qm
+/DIN_A { % a -- x y 	a is the number of th DIN A, x and y are the corresponding sizes
+	dup 0 eq 
+		{ pop DIN_A_0 }
+		{ 1 sub DIN_A 2 div exch } ifelse
+} def
+
+
+/all_scale { 1 div } def
+
+/papersize [
+	paper_autosize
+	{
+		currentpagedevice
+		/PageSize get
+		aload pop
+	}
+	{
+		4 DIN_A 
+       		round exch round exch % dirty hack, might work
+	} ifelse
+] cvx def
+
+} if
