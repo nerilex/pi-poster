@@ -305,31 +305,7 @@ bits_per_int 20 string cvs print
 	16#0f and
 } def
 
-% n -- x9 x8 x7 x6 x5 x4 x3 x2 x1 x0 % xi is the (n + i)-th digit of pi
-/pi_hex_digit10 {
-	1 sub
-	/n exch def
-    n S1x 4 mul     % x1
-	n S4x 2 mul sub % x2
-	n S5x sub       % x3
-	n S6x sub       % x4
-%	1 SHIFT mul bitshift
-%	 1 sub and
-	SHIFT 40 sub -1 mul bitshift
-	1 1 10 {
-		% <digits> pi c
-		pop
-		% <digits> pi
-		dup 16#0f and
-		% <digits> pi <xi>
-		exch
-		% <digits'> pi
-		-4 bitshift
-	} for
-	pop
-} def
-
-/digits_per_call 6 def
+/digits_per_call 5 def
 % n -- x_(digits_per_call - 1) ... x7 x6 x5 x4 x3 x2 x1 x0 % xi is the (n + i)-th digit of pi
 /pi_hex_digit_X {
 	1 sub

@@ -34,7 +34,6 @@ currentdict /test_limit known not {
 	/test_limit pi_hex_cheat_digits_num def
 } if
 
-
 % start length -- 
 /verbose_test {
 	1 index add % start stop
@@ -83,95 +82,30 @@ currentdict /test_limit known not {
 	(\n  ) print
 } def
 
-/test_pi_hex_digit {
-	(\n== test_pi_hex_digit ==\n) print
-	/errorcnt 0 def
-	/successcnt 0 def
-	/test_start_time usertime def
-	
-	0 1 test_limit {
-		/ctr exch def
-		ctr 64 mod 0 eq 
-		{
-			(  \(time: ) print usertime test_start_time sub aprint ( milliseconds\)) print
-			(\n  [) print
-			5 ctr align_iprint
-			(]: ) print
-		} if
-		flush
-	 	
-		ctr pi_hex_digit
-		ctr pi_hex_digit_cheat % c c a b
-		eq { 
-			/successcnt successcnt 1 add def
-			(*) print
-		} {
-			/errorcnt errorcnt 1 add def
-			(\nError @ ) print ctr cvs32 print 
-			( is: )      print ctr pi_hex_digit xprint
-			( should: )  print ctr pi_hex_digit_cheat xprint
-			( \(#) print errorcnt cvs32 print (\)\n  ) print
-			flush
-		} ifelse % c c
-	} for
-	(\n Errors:  ) print errorcnt aprint (\n  ) print
-	( Success: ) print successcnt aprint (\n  ) print
-	(execution took ) print usertime test_start_time sub aprint ( milliseconds\n) print
-	flush
-} def
-
-/test_pi_hex_digit10 {
-	(\n== test_pi_hex_digit ==\n) print
-	/errorcnt 0 def
-	/successcnt 0 def
-	/test_start_time usertime def
-	
-	0 10 test_limit {
-		/ctr exch def
-		ctr 64 mod 0 eq 
-		{
-			(\n  [) print
-			5 ctr align_iprint
-			(]: ) print
-		} if
-		flush
-	 	
-		ctr pi_hex_digit10
-		0 1 9 {
-			% <pi-digits> c
-	 		ctr add /ctr2 exch def
-			% <pi-digits>
-	 		/value exch def
-			ctr2 pi_hex_digit_cheat
-			value
-			eq { 
-				/successcnt successcnt 1 add def
-				(*) print
-			} {
-				/errorcnt errorcnt 1 add def
-				(\nError @ ) print ctr2 aprint 
-				( is: )      print value xprint
-				( should: )  print ctr2 pi_hex_digit_cheat xprint
-				( \(#) print errorcnt cvs32 print (\)\n  ) print
-				flush
-			} ifelse % c c
-		} for
-	} for
-	(\n Errors:  ) print errorcnt aprint (\n  ) print
-	( Success: ) print successcnt aprint (\n  ) print
-	(execution took ) print usertime test_start_time sub aprint ( milliseconds\n) print
-	flush
-} def
-
 /test_pi_hex_digit_X {
-	(\n== test_pi_hex_digit ==\n) print
+	(\n== test_pi_hex_digit ==) print
+	(\n  limit: ) print test_limit aprint
+	(\n  digits_per_call: ) print digits_per_call aprint
+	(\n) print
  	/errorcnt 0 def
  	/successcnt 0 def
+ 	/time_log test_limit array def
  	/test_start_time usertime def
-	0 digits_per_call test_limit digits_per_call sub {
-%	0 digits_per_call 300 {
+	0 digits_per_call test_limit 1 sub digits_per_call idiv digits_per_call mul {
 		/ctr exch def
+		time_log ctr usertime
+		% time_log ctr  time_a 
 		ctr pi_hex_digit_X
+		usertime
+		% time_log ctr time_a <X_digits> time_b
+		digits_per_call 4 add -3 roll
+		% <X_digits> time_b time_log ctr time_a
+		4 -1 roll
+		% <X_digits> time_log ctr time_a time_b
+		exch sub
+		% <X_digits> time_log ctr time_delta
+		put
+		% <X_digits> 
 		0 1 digits_per_call 1 sub {
 			% <pi-digits> c
 	 		ctr add /ctr2 exch def
@@ -179,6 +113,7 @@ currentdict /test_limit known not {
 	 		/value exch def
 			ctr2 64 mod 0 eq 
 			{
+				(  \( time: ) print 10 usertime test_start_time sub align_iprint (ms \)) print flush
 				(\n  [) print
 				5 ctr2 align_iprint
 				(]: ) print
@@ -204,5 +139,20 @@ currentdict /test_limit known not {
 	(execution took ) print usertime test_start_time sub aprint ( milliseconds\n) print
 	flush
 } def
+
+/test_pi_hex_digit {
+	<< /digits_per_call 1 /pi_hex_digit_X { pi_hex_digit } >>
+	begin
+	test_pi_hex_digit_X
+	/time_log load
+	end
+	/time_log exch def
 	
+	(time_log) print
+	time_log ==
+	(\n) print
+	flush
+} def
+
+
 } if
