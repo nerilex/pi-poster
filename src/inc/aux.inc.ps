@@ -111,6 +111,21 @@ def
 	xprint32
 } def
 
+% width int -- 
+/align_iprint {
+	cvs32 dup % width "int" "int"
+	length
+	%  width "int" len("int")
+	3 -1 roll
+	%  "int" len("int") width
+	exch sub % "ctr"  width-len("ctr")
+	(                                ) 0
+	% "ctr"  width-len("ctr") (32x' ') 0
+	3 -1 roll
+	% "ctr" (32x' ') 0 width-len("ctr") 
+	getinterval print print
+} def
+
 /aprint { cvs32 print} def
 
 /_aprint { dup aprint} def

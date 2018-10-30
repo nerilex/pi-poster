@@ -33,9 +33,10 @@ systemdict /runlibfile known not {
 
 currentdict /__cheat_hex_inc_ps__ known not {
 	(cheat_hex.ps) runlibfile
-	/pi_hex_digit_cheat /pi_hex_digit load def
-	/pi_hex_digit where { /pi_hex_digit undef } if
 } if
+
+/pi_hex_digit_cheat /pi_hex_digit load def
+/pi_hex_digit where { /pi_hex_digit undef } if
 
 currentdict /__trigo_inc_ps__ known not {
 	(trigo.inc.ps) runlibfile
@@ -147,6 +148,36 @@ bits_per_int 20 string cvs print
 } def
 
 % e m -- ((16**e) mod m)
+/pow16_mod_l2r {
+	/modulus exch def
+	% e 
+%	(reverse e\() print dup 20 string cvs print (\) = ) print flush
+	bitreverse % e'
+%	dup = flush
+	1 % the accumulator
+	{
+		% e a
+		1 index % e a e
+		1 eq { exit } if
+		dup mul % e a'
+		modulus mod  % e a'
+		exch % a' e
+		dup -1 bitshift exch % a' e' e
+		1 and 1 eq
+		{
+			% a' e'
+			exch % e' a'
+			16 mul modulus mod % e' a''
+		} {
+			exch % e' a''
+		} ifelse
+	} loop
+	% e a
+	exch
+	pop
+} def
+
+% e m -- ((16**e) mod m)
 /pow16_mod {
 	/modulus exch def
 	% e 
@@ -179,7 +210,7 @@ bits_per_int 20 string cvs print
 /MAX_b 1 bits_per_int 1 sub bitshift def
 
 
-/SHIFT bits_per_int bits_per_digit idiv 4 sub bits_per_digit mul def
+/SHIFT bits_per_int bits_per_digit idiv 1 sub bits_per_digit mul def
 %/SHIFT 27 def
 
 
@@ -277,6 +308,55 @@ bits_per_int 20 string cvs print
 	16#0f and
 } def
 
+% n -- x9 x8 x7 x6 x5 x4 x3 x2 x1 x0 % xi is the (n + i)-th digit of pi
+/pi_hex_digit10 {
+	1 sub
+	/n exch def
+    n S1x 4 mul     % x1
+	n S4x 2 mul sub % x2
+	n S5x sub       % x3
+	n S6x sub       % x4
+%	1 SHIFT mul bitshift
+%	 1 sub and
+	SHIFT 40 sub -1 mul bitshift
+	1 1 10 {
+		% <digits> pi c
+		pop
+		% <digits> pi
+		dup 16#0f and
+		% <digits> pi <xi>
+		exch
+		% <digits'> pi
+		-4 bitshift
+	} for
+	pop
+} def
+
+/digits_per_call 6 def
+% n -- x_(digits_per_call - 1) ... x7 x6 x5 x4 x3 x2 x1 x0 % xi is the (n + i)-th digit of pi
+/pi_hex_digit_X {
+	1 sub
+	/n exch def
+    n S1x 4 mul     % x1
+	n S4x 2 mul sub % x2
+	n S5x sub       % x3
+	n S6x sub       % x4
+%	1 SHIFT mul bitshift
+%	 1 sub and
+	SHIFT digits_per_call bits_per_digit mul sub -1 mul bitshift
+	1 1 digits_per_call {
+		% <digits> pi c
+		pop
+		% <digits> pi
+		dup 16#0f and
+		% <digits> pi <xi>
+		exch
+		% <digits'> pi
+		bits_per_digit -1 mul bitshift
+	} for
+	pop
+} def
+
 /test_pi_hex_digit {
 	(\n== test_pi_hex_digit ==\n) print
  	/errorcnt 0 def
@@ -311,9 +391,96 @@ bits_per_int 20 string cvs print
 	} for
 	(\n Errors:  ) print errorcnt cvs32 print (\n  ) print
 	( Success: ) print successcnt cvs32 print (\n  ) print
+	flush
 } def
 
-test_pi_hex_digit
+/test_pi_hex_digit10 {
+	(\n== test_pi_hex_digit ==\n) print
+ 	/errorcnt 0 def
+ 	/successcnt 0 def
+	0 10 pi_hex_cheat_digits_num {
+		/ctr exch def
+		ctr 64 mod 0 eq 
+		{
+			(\n  [) print
+			ctr cvs32 dup % "ctr" "ctr" 
+			length 5 exch sub % "ctr"  5-len("ctr")
+			(     ) 0 
+			3 -1 roll
+			getinterval print print
+			(]: ) print
+		} if
+		flush
+	 	
+		ctr pi_hex_digit10
+		0 1 9 {
+			% <pi-digits> c
+	 		ctr add /ctr2 exch def
+			% <pi-digits>
+	 		/value exch def
+			ctr2 pi_hex_digit_cheat
+			value
+			eq { 
+				/successcnt successcnt 1 add def
+				(*) print
+			} {
+				/errorcnt errorcnt 1 add def
+				(\nError @ ) print ctr2 aprint 
+				( is: )      print value xprint
+				( should: )  print ctr2 pi_hex_digit_cheat xprint
+				( \(#) print errorcnt cvs32 print (\)\n  ) print
+				flush
+			} ifelse % c c
+		} for
+	} for
+	(\n Errors:  ) print errorcnt aprint (\n  ) print
+	( Success: ) print successcnt aprint (\n  ) print
+	(execution took ) print usertime starttime sub aprint ( milliseconds\n) print
+	flush
+} def
+
+/test_pi_hex_digit_X {
+	(\n== test_pi_hex_digit ==\n) print
+ 	/errorcnt 0 def
+ 	/successcnt 0 def
+	0 digits_per_call pi_hex_cheat_digits_num digits_per_call sub {
+%	0 digits_per_call 300 {
+		/ctr exch def
+		ctr pi_hex_digit_X
+		0 1 digits_per_call 1 sub {
+			% <pi-digits> c
+	 		ctr add /ctr2 exch def
+			% <pi-digits>
+	 		/value exch def
+			ctr2 64 mod 0 eq 
+			{
+				(\n  [) print
+				5 ctr2 align_iprint
+				(]: ) print
+			} if
+			flush
+			ctr2 pi_hex_digit_cheat
+			value
+			eq { 
+				/successcnt successcnt 1 add def
+				(*) print
+			} {
+				/errorcnt errorcnt 1 add def
+				(\nError @ ) print ctr2 aprint 
+				( is: )      print value xprint
+				( should: )  print ctr2 pi_hex_digit_cheat xprint
+				( \(#) print errorcnt aprint (\)\n  ) print
+				flush
+			} ifelse % c c
+		} for
+	} for
+	(\n Errors:  ) print errorcnt aprint (\n  ) print
+	( Success: ) print successcnt aprint (\n  ) print
+	(execution took ) print usertime starttime sub aprint ( milliseconds\n) print
+	flush
+} def
+
+test_pi_hex_digit_X
 
 /errorLocations [
 2270 2910 3170 3310 3950 4300 5269 5270 5610 5770 6300 7260 7360 7470 7600 8250 

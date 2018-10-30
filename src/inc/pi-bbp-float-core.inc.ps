@@ -32,9 +32,10 @@ systemdict /runlibfile known not {
 
 currentdict /__cheat_hex_inc_ps__ known not {
 	(cheat_hex.ps) runlibfile
-	/pi_hex_digit_cheat /pi_hex_digit load def
-	/pi_hex_digit where { /pi_hex_digit undef } if
 } if
+
+/pi_hex_digit_cheat /pi_hex_digit load def
+/pi_hex_digit where { /pi_hex_digit undef } if
 
 currentdict /__trigo_inc_ps__ known not {
 	(trigo.inc.ps) runlibfile
