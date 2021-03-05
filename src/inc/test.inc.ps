@@ -154,5 +154,21 @@ currentdict /test_limit known not {
 	flush
 } def
 
+/print_time_log {
+	time_log ==
+	(\n == cvs dump ==\n) print
+	flush
+	0 1 time_log length 1 sub {
+		% c 
+		_aprint ( ; ) print
+		% c
+		time_log exch get
+		% value
+		aprint
+		(\n) print
+		flush
+	} for
+	(\n) print
+} def
 
 } if

@@ -55,9 +55,7 @@ currentdict /__test_inc_ps__ known not {
 } if
 
 
-(useable bits in an integer: ) print
-bits_per_int 20 string cvs print
-(\n) print
+print_profile
 
 /bits_per_digit 4 def
 
@@ -305,7 +303,11 @@ bits_per_int 20 string cvs print
 	16#0f and
 } def
 
-/digits_per_call 5 def
+currentdict /digits_per_call known not {
+	/digits_per_call 5 def
+} if
+
+
 % n -- x_(digits_per_call - 1) ... x7 x6 x5 x4 x3 x2 x1 x0 % xi is the (n + i)-th digit of pi
 /pi_hex_digit_X {
 	1 sub
@@ -332,6 +334,7 @@ bits_per_int 20 string cvs print
 
 
 test_pi_hex_digit_X
+print_time_log
 
 /errorLocations [
 2270 2910 3170 3310 3950 4300 5269 5270 5610 5770 6300 7260 7360 7470 7600 8250 
